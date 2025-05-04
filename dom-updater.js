@@ -113,8 +113,26 @@
     if (window.DorikFirebase.database) {
       window.DorikFirebase.database.ref('/').on('value', (snapshot) => {
         const data = snapshot.val();
-        const count = window.DorikFirebase.domUpdater.updateDOM(data);
-        console.log(`[DOM Updater] Updated ${count} containers`);
+        
+        // Store data globally for other modules
+        window.DorikFirebase.currentData = data;
+        
+        // Check if lazy loader is active
+        if (window.DorikFirebase.lazyLoader && window.DorikFirebase.lazyLoader.loadedContainers) {
+          // If lazy loader is active, only update loaded containers
+          window.DorikFirebase.lazyLoader.setData(data);
+          console.log('[DOM Updater] Data sent to lazy loader');
+        } else {
+          // If no lazy loader, update all containers
+          const count = window.DorikFirebase.domUpdater.updateDOM(data);
+          console.log(`[DOM Updater] Updated ${count} containers`);
+        }
+        
+        // Dispatch event for other modules
+        const event = new CustomEvent('firebaseDataUpdate', {
+          detail: { data: data }
+        });
+        document.dispatchEvent(event);
       });
     }
   });
