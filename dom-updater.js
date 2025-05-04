@@ -121,5 +121,26 @@
     }
   };
 
-  // Rest of the code remains the same...
+  // Đợi Firebase ready để đăng ký realtime listener
+  document.addEventListener('firebaseReady', function() {
+    if (window.DorikFirebase.database) {
+      window.DorikFirebase.database.ref('/').on('value', (snapshot) => {
+        const data = snapshot.val();
+        window.DorikFirebase.currentData = data;
+        
+        if (window.DorikFirebase.lazyLoader && window.DorikFirebase.lazyLoader.loadedContainers) {
+          window.DorikFirebase.lazyLoader.setData(data);
+          console.log('[DOM Updater] Data sent to lazy loader');
+        } else {
+          const count = window.DorikFirebase.domUpdater.updateDOM(data);
+          console.log(`[DOM Updater] Updated ${count} containers`);
+        }
+        
+        const event = new CustomEvent('firebaseDataUpdate', {
+          detail: { data: data }
+        });
+        document.dispatchEvent(event);
+      });
+    }
+  });
 })();
