@@ -1,53 +1,50 @@
 // dom-updater.js
 (function() {
-  // Đảm bảo Firebase đã sẵn sàng
   if (!window.DorikFirebase) {
     window.DorikFirebase = {};
   }
 
-  // DOM Updater module
   window.DorikFirebase.domUpdater = {
-    // Update DOM với data từ Firebase
     updateDOM: function(data) {
       if (!data || !data.products) return;
       
       let updatedCount = 0;
       
       Object.keys(data.products).forEach(id => {
+        // Tìm container bằng ID trực tiếp (như code cũ)
         const container = document.getElementById(id);
         if (!container) return;
         
         const product = data.products[id];
         
         // Xử lý các elements có nhiều fields (dùng dấu +)
-        const multiFieldElements = container.querySelectorAll('[data-firebase-field*="+"]');
+        const multiFieldElements = container.querySelectorAll('[data-fields*="+"]');
         multiFieldElements.forEach(el => {
-          const fields = el.getAttribute('data-firebase-field').split('+').map(f => f.trim());
+          const fields = el.getAttribute('data-fields').split('+').map(f => f.trim());
           let content = '';
           
           // Xử lý price+original_price
           if (fields.includes('price') && fields.includes('original_price')) {
-            content = '<div class="firebase-price-group">';
+            content = '<div class="price-wrapper">';
             if (product.price) {
-              content += `<span class="firebase-current-price">${product.price}<span class="currency">đ</span></span>`;
+              content += `<span class="current-price">${product.price}<span class="currency">đ</span></span>`;
             }
             if (product.original_price) {
-              content += `<span class="firebase-original-price">${product.original_price}<span class="currency">đ</span></span>`;
+              content += `<span class="original-price">${product.original_price}<span class="currency">đ</span></span>`;
             }
             content += '</div>';
           }
           
-          // Xử lý rating+sold
           else if (fields.includes('rating') && fields.includes('sold')) {
-            content = '<div class="firebase-rating-sold">';
+            content = '<div class="rating-sold-wrapper">';
             if (product.rating) {
-              content += `<span class="firebase-rating">⭐${product.rating}</span>`;
+              content += `<span class="rating">⭐${product.rating}</span>`;
             }
             if (product.rating && product.sold) {
-              content += `<span class="firebase-divider">|</span>`;
+              content += `<span class="divider">|</span>`;
             }
             if (product.sold) {
-              content += `<span class="firebase-sold">Đã bán ${product.sold}</span>`;
+              content += `<span class="sold-count">Đã bán ${product.sold}</span>`;
             }
             content += '</div>';
           }
@@ -58,22 +55,22 @@
         
         // Xử lý các fields đơn lẻ
         Object.keys(product).forEach(field => {
-          const elements = container.querySelectorAll(`[data-firebase-field="${field}"]:not([data-firebase-field*="+"])`);
+          const elements = container.querySelectorAll(`[data-fields="${field}"]:not([data-fields*="+"])`);
           if (elements.length === 0) return;
           
           elements.forEach(el => {
             switch(field) {
               case 'price':
-                el.innerHTML = `<span class="firebase-current-price">${product[field]}<span class="currency">đ</span></span>`;
+                el.innerHTML = `<span class="current-price">${product[field]}<span class="currency">đ</span></span>`;
                 break;
                 
               case 'original_price':
-                el.innerHTML = `<span class="firebase-original-price">${product[field]}<span class="currency">đ</span></span>`;
+                el.innerHTML = `<span class="original-price">${product[field]}<span class="currency">đ</span></span>`;
                 break;
                 
               case 'link_shopee':
               case 'link_tiktok':
-                if (el.tagName === 'A') {
+                if (el.tagName === 'A' || el.tagName === 'BUTTON') {
                   el.href = product[field];
                   el.setAttribute('target', '_blank');
                   el.setAttribute('rel', 'noopener noreferrer');
@@ -113,22 +110,16 @@
     if (window.DorikFirebase.database) {
       window.DorikFirebase.database.ref('/').on('value', (snapshot) => {
         const data = snapshot.val();
-        
-        // Store data globally for other modules
         window.DorikFirebase.currentData = data;
         
-        // Check if lazy loader is active
         if (window.DorikFirebase.lazyLoader && window.DorikFirebase.lazyLoader.loadedContainers) {
-          // If lazy loader is active, only update loaded containers
           window.DorikFirebase.lazyLoader.setData(data);
           console.log('[DOM Updater] Data sent to lazy loader');
         } else {
-          // If no lazy loader, update all containers
           const count = window.DorikFirebase.domUpdater.updateDOM(data);
           console.log(`[DOM Updater] Updated ${count} containers`);
         }
         
-        // Dispatch event for other modules
         const event = new CustomEvent('firebaseDataUpdate', {
           detail: { data: data }
         });
