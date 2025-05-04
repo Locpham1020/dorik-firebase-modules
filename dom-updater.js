@@ -1,4 +1,4 @@
-// dom-updater.js - SỬA LẠI TOÀN BỘ FILE
+// dom-updater.js
 (function() {
   if (!window.DorikFirebase) {
     window.DorikFirebase = {};
@@ -30,13 +30,13 @@
         
         if (!product) return;
         
-        // TÌM ELEMENTS VỚI data-firebase-field (KHÔNG CÓ 's')
+        // Tìm các elements với data-firebase-field
         const fieldElements = container.querySelectorAll('[data-firebase-field]');
         
         fieldElements.forEach(el => {
           const fieldAttr = el.getAttribute('data-firebase-field');
           
-          // Xử lý nhiều fields (price+original)
+          // Xử lý nhiều fields (price+original_price)
           if (fieldAttr.includes('+')) {
             const fields = fieldAttr.split('+').map(f => f.trim());
             let content = '';
@@ -101,6 +101,7 @@
                     const linkElement = el.tagName === 'A' ? el : el.closest('a');
                     linkElement.href = product[fieldName];
                     linkElement.setAttribute('target', '_blank');
+                    linkElement.setAttribute('rel', 'noopener noreferrer');
                   }
                   break;
                   
@@ -117,7 +118,6 @@
         updatedCount++;
       });
       
-      console.log(`[DOM Updater] Found ${updatedCount} containers to update`);
       return updatedCount;
     }
   };
