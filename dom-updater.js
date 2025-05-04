@@ -1,4 +1,4 @@
-// dom-updater.js
+// dom-updater.js - SỬA LẠI TOÀN BỘ FILE
 (function() {
   if (!window.DorikFirebase) {
     window.DorikFirebase = {};
@@ -30,19 +30,19 @@
         
         if (!product) return;
         
-        // Tìm các elements với data-firebase-fields
-        const fieldElements = container.querySelectorAll('[data-firebase-fields]');
+        // TÌM ELEMENTS VỚI data-firebase-field (KHÔNG CÓ 's')
+        const fieldElements = container.querySelectorAll('[data-firebase-field]');
         
         fieldElements.forEach(el => {
-          const fieldsAttr = el.getAttribute('data-firebase-fields');
+          const fieldAttr = el.getAttribute('data-firebase-field');
           
           // Xử lý nhiều fields (price+original)
-          if (fieldsAttr.includes('+')) {
-            const fields = fieldsAttr.split('+').map(f => f.trim());
+          if (fieldAttr.includes('+')) {
+            const fields = fieldAttr.split('+').map(f => f.trim());
             let content = '';
             
-            // Xử lý price+original
-            if (fields.includes('price') && fields.includes('original')) {
+            // Xử lý price+original_price
+            if (fields.includes('price') && fields.includes('original_price')) {
               content = '<div class="price-wrapper">';
               if (product.price) {
                 content += `<span class="current-price">${product.price}<span class="currency">đ</span></span>`;
@@ -71,7 +71,7 @@
           }
           // Xử lý single field
           else {
-            const fieldName = fieldsAttr;
+            const fieldName = fieldAttr;
             
             if (product[fieldName]) {
               switch(fieldName) {
@@ -117,6 +117,7 @@
         updatedCount++;
       });
       
+      console.log(`[DOM Updater] Found ${updatedCount} containers to update`);
       return updatedCount;
     }
   };
@@ -128,14 +129,11 @@
         const data = snapshot.val();
         window.DorikFirebase.currentData = data;
         
-        if (window.DorikFirebase.lazyLoader && window.DorikFirebase.lazyLoader.loadedContainers) {
-          window.DorikFirebase.lazyLoader.setData(data);
-          console.log('[DOM Updater] Data sent to lazy loader');
-        } else {
-          const count = window.DorikFirebase.domUpdater.updateDOM(data);
-          console.log(`[DOM Updater] Updated ${count} containers`);
-        }
+        // Update DOM
+        const count = window.DorikFirebase.domUpdater.updateDOM(data);
+        console.log(`[DOM Updater] Updated ${count} containers`);
         
+        // Dispatch event cho các module khác
         const event = new CustomEvent('firebaseDataUpdate', {
           detail: { data: data }
         });
