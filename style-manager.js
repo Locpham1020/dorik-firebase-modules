@@ -64,7 +64,7 @@
       }
       
       /* Loading state */
-      [data-fields]:not([data-updated="true"]) {
+      [data-firebase-field]:not([data-updated="true"]) {
         background-color: rgba(0, 0, 0, 0.05);
         border-radius: 4px;
         min-height: 24px;
@@ -74,7 +74,7 @@
         overflow: hidden;
       }
       
-      [data-fields]:not([data-updated="true"])::after {
+      [data-firebase-field]:not([data-updated="true"])::after {
         content: '';
         position: absolute;
         top: 0;
