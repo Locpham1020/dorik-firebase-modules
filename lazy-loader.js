@@ -32,14 +32,12 @@
     },
 
     observeContainers: function() {
-      // Quan sát tất cả containers có ID phù hợp với Firebase
-      const allContainers = document.querySelectorAll('[id]');
-      allContainers.forEach(container => {
-        // Kiểm tra xem ID có trong Firebase data không
-        if (this.firebaseData && this.firebaseData.products && this.firebaseData.products[container.id]) {
-          if (!this.loadedContainers.has(container.id)) {
-            this.observer.observe(container);
-          }
+      // Observe containers với ID sp01, sp02, etc
+      const containers = document.querySelectorAll('[id^="sp"]');
+      
+      containers.forEach(container => {
+        if (!this.loadedContainers.has(container.id)) {
+          this.observer.observe(container);
         }
       });
     },
@@ -54,46 +52,55 @@
       this.loadedContainers.add(containerId);
       this.observer.unobserve(container);
 
-      if (this.firebaseData && this.firebaseData.products && this.firebaseData.products[containerId]) {
-        const product = this.firebaseData.products[containerId];
-        this.updateContainer(container, product);
+      // Lấy numeric ID từ container ID (sp01 -> 1)
+      const numericId = containerId.replace('sp0', '').replace('sp', '');
+      
+      if (this.firebaseData && this.firebaseData.products && this.firebaseData.products[numericId]) {
+        const product = this.firebaseData.products[numericId];
+        
+        // Update container
+        if (window.DorikFirebase.domUpdater) {
+          window.DorikFirebase.domUpdater.updateDOM({
+            products: {
+              [numericId]: product
+            }
+          });
+        }
+        
         console.log(`[Lazy Loader] Loaded container: ${containerId}`);
       }
     },
 
-    updateContainer: function(container, product) {
-      if (window.DorikFirebase.domUpdater) {
-        window.DorikFirebase.domUpdater.updateDOM({
-          products: {
-            [container.id]: product
-          }
-        });
-      }
-    },
-
     loadAllContainers: function() {
-      if (!this.firebaseData || !this.firebaseData.products) return;
-      
-      Object.keys(this.firebaseData.products).forEach(id => {
-        const container = document.getElementById(id);
-        if (container) {
-          this.loadContainer(container);
-        }
+      const containers = document.querySelectorAll('[id^="sp"]');
+      containers.forEach(container => {
+        this.loadContainer(container);
       });
     },
 
     setData: function(data) {
       this.firebaseData = data;
       
-      // Update containers đã load
+      // Update already loaded containers
       this.loadedContainers.forEach(containerId => {
         const container = document.getElementById(containerId);
-        if (container && data.products && data.products[containerId]) {
-          this.updateContainer(container, data.products[containerId]);
+        if (container) {
+          // Lấy numeric ID từ container ID
+          const numericId = containerId.replace('sp0', '').replace('sp', '');
+          
+          if (data.products && data.products[numericId]) {
+            if (window.DorikFirebase.domUpdater) {
+              window.DorikFirebase.domUpdater.updateDOM({
+                products: {
+                  [numericId]: data.products[numericId]
+                }
+              });
+            }
+          }
         }
       });
       
-      // Observe containers mới
+      // Observe new containers
       this.observeContainers();
     },
 
@@ -102,12 +109,14 @@
     }
   };
 
+  // Auto-initialize when Firebase is ready
   document.addEventListener('firebaseReady', function() {
     setTimeout(() => {
       window.DorikFirebase.lazyLoader.init();
     }, 100);
   });
 
+  // Listen for Firebase data updates
   document.addEventListener('firebaseDataUpdate', function(e) {
     if (e.detail && e.detail.data) {
       window.DorikFirebase.lazyLoader.setData(e.detail.data);
